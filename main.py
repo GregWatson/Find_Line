@@ -13,7 +13,8 @@ def main():
     if args.tests:
         test_params = { 'CANVAS_SIZE': 20, 
                         'LEN_THRESH':10,
-                        'LOG': False }
+                        'LOG': False,
+                        'debug': True}
         passed, total = run_tests(test_params)
         return
     
@@ -22,13 +23,19 @@ def main():
     img = np.zeros((SIZE, SIZE,3), dtype=np.uint8)
 
     # draw a line
-    cv2.line(img, (1,1), (18,18), (255, 255, 255), thickness=1)
-    cv2.line(img, (1,2), (2,1), (255, 255, 255), thickness=1)
+    cv2.line(img, (1,18), (18,1), (255, 255, 255), thickness=1)
+
+    # draw line interference
+    # cv2.line(img, (1,2), (2,1), (255, 255, 255), thickness=1)
 
     lines_found, gray = find_lines(img, len_thresh=10, debug=True)
-    for line in lines_found:
-        points, angle = line
-        print(f"Found line {points[0]} - {points[-1]} with angle: {np.degrees(angle):.2f} degrees")
+    if not len(lines_found):
+        print("No lines found.")
+    else:
+        print(f"Found {len(lines_found)} lines:")
+        for line in lines_found:
+            points, angle = line
+            print(f"Found line {points[0]} - {points[-1]} with angle: {np.degrees(angle):.1f} degrees")
 
     # SCALE IMAGE TO 500X500
     scaled_img = cv2.resize(gray, (500, 500), interpolation=cv2.INTER_NEAREST)
