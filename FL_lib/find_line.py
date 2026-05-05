@@ -1,5 +1,5 @@
 import numpy as np
-from FL_lib.fl_core import get_adjacent_points, get_angle
+from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff
 from FL_lib.find_min_len_line import find_min_len_line
 
 BLACK = 0
@@ -50,9 +50,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
             best_angle_diff = float('inf')
             for point in adjacent_points:
                 angle = get_angle(point, start_point)
-                angle_diff = abs(angle - avg_angle)
-                if angle_diff > 2*np.pi:
-                    angle_diff -= 2*np.pi
+                angle_diff = get_angle_diff(angle, avg_angle)
                 if angle_diff < best_angle_diff:
                     best_angle_diff = angle_diff
                     next_point = point
@@ -60,9 +58,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
 
         points.append(next_point)
         sum_of_angles += best_angle
-        diff_angle = abs(best_angle - avg_angle)
-        if diff_angle > 2*np.pi:
-            diff_angle -= 2*np.pi
+        diff_angle = get_angle_diff(best_angle, avg_angle)
         tol = np.radians(90/(line_length+1))  # tolerance decreases as line gets longer
 
         if diff_angle > tol:

@@ -7,6 +7,7 @@ from FL_lib.find_line import find_line
 # simple straight lines with no interference.
 def run_test_1(test_params):
     print("Running test 1...")
+    failed = False
     SIZE = test_params['CANVAS_SIZE']
     # create a white canvas of size SIZExSIZE
     img = np.zeros((SIZE, SIZE,3), dtype=np.uint8)
@@ -28,11 +29,17 @@ def run_test_1(test_params):
 
             if len(points) <  test_params['LEN_THRESH']:
                 print(f"*** FAIL ***: Test 1 failed: Expected at least {test_params['LEN_THRESH']} points, found {len(points)}")
-                return False
-            if (points[0] != l_start or points[-1] != l_end) and (points[0] != l_end or points[-1] != l_start):
+                failed = True
+            if len(points) > 0 and (points[0] != l_start or points[-1] != l_end) and (points[0] != l_end or points[-1] != l_start):
                 print(f"*** FAIL ***: Test 1 failed: Expected line from {l_start} to {l_end}, found from {points[0]} to {points[-1]}")
+                failed = True
+            if failed:
+                if test_params['debug']:
+                    scaled_img = cv2.resize(gray, (500, 500), interpolation=cv2.INTER_NEAREST)
+                    cv2.imshow("Line", scaled_img)
+                    cv2.waitKey(0)
+                    cv2.destroyAllWindows()
                 return False
-
 
     return True
 

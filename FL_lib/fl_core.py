@@ -9,6 +9,12 @@ def get_angle(pt, start_point):
         a += 2*np.pi
     return a
 
+def get_angle_diff(angle1, angle2):
+    diff = abs(angle1 - angle2)
+    if diff > np.pi:
+        diff = 2*np.pi - diff
+    return diff
+
 def find_initial_start_point(gray):
     for y in range(gray.shape[0]):
         for x in range(gray.shape[1]):
