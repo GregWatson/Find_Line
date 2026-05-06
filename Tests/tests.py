@@ -13,8 +13,8 @@ def run_tests(test_params):
 
     total += 1
     if run_test_1(test_params): passed += 1; 
-    #total += 1
-    #if run_test_2(test_params): passed += 1; 
+    total += 1
+    if run_test_2(test_params): passed += 1; 
 
     if passed == total:
         print("All tests passed!")

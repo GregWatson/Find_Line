@@ -9,6 +9,7 @@ def get_angle(pt, start_point):
         a += 2*np.pi
     return a
 
+# Calculate the smallest difference between two angles in radians, accounting for wraparound at 2*pi.
 def get_angle_diff(angle1, angle2):
     diff = abs(angle1 - angle2)
     if diff > np.pi:

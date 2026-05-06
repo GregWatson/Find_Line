@@ -8,13 +8,14 @@ from Tests.tests import run_tests
 def main():
     parser = argparse.ArgumentParser(description="Piece Project CLI")
     parser.add_argument("-t", "--tests", action="store_true", help="Run tests")
+    parser.add_argument("-d", "--debug", action="store_true", help="Enable debug mode with verbose output")
     args = parser.parse_args()
 
     if args.tests:
         test_params = { 'CANVAS_SIZE': 20, 
                         'LEN_THRESH':10,
                         'LOG': False,
-                        'debug': True}
+                        'debug': args.debug }
         passed, total = run_tests(test_params)
         return
     
@@ -28,7 +29,7 @@ def main():
     # draw line interference
     # cv2.line(img, (1,2), (2,1), (255, 255, 255), thickness=1)
 
-    lines_found, gray = find_lines(img, len_thresh=10, debug=True)
+    lines_found, gray = find_lines(img, len_thresh=10, debug=args.debug)
     if not len(lines_found):
         print("No lines found.")
     else:
