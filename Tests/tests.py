@@ -4,6 +4,7 @@ import numpy as np
 from FL_lib.find_lines import find_lines
 from Tests.test1 import run_test_1
 from Tests.test2 import run_test_2
+from Tests.test3 import run_test_3
 
 
 def run_tests(test_params):
@@ -15,6 +16,8 @@ def run_tests(test_params):
     if run_test_1(test_params): passed += 1; 
     total += 1
     if run_test_2(test_params): passed += 1; 
+    total += 1
+    if run_test_3(test_params): passed += 1; 
 
     if passed == total:
         print("All tests passed!")

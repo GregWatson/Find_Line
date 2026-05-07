@@ -18,7 +18,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
     # starting from the start point and following adjacent points while checking angle deviation to ensure we 
     # are following a line and not a curve. 
     points, sum_unitXY_so_far = find_min_len_line(start_point, [start_point], gray, len_thresh=len_thresh, debug=debug)
-    if len(points) < 2: # No valid line
+    if len(points) < len_thresh: # No valid line
         if debug:
             print(f"No valid line found starting from {start_point}.")
         return [], None
@@ -26,10 +26,9 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
     gray[start_point[1], start_point[0]] = BLACK  # mark the starting point as used in the image
     while True:
         last_point = points[-1]
-        x1, y1 = last_point
         next_point = None
         adjacent_points = get_adjacent_points(gray, last_point)
-        line_length = np.hypot(last_point[0] - x1, last_point[1] - y1)
+        line_length = np.hypot(last_point[0] - start_point[0], last_point[1] - start_point[1]   )
         avg_angle = np.arctan2(sum_unitXY_so_far[1]/len(points), sum_unitXY_so_far[0]/len(points))
         tol = np.radians(90/(line_length+1))  # tolerance decreases as line gets longer
     
@@ -37,6 +36,9 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
             if debug:
                 print(f"No more adjacent points found. Start {start_point} -> {last_point} len {line_length}  Avg angle: {np.degrees(avg_angle)} degrees")
             return [start_point] + points, avg_angle
+        else:
+            if debug:
+                print(f"Found {len(adjacent_points)} adjacent points: {adjacent_points}")
 
         # clear adajacent points from the image so we don't reuse them
         for pt in adjacent_points:
@@ -55,14 +57,18 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
         if best_angle_diff > tol:
             if debug:
                 print(f"Angle difference {np.degrees(best_angle_diff)} exceeds tolerance. Stopping line. (Len is {len(points)}")
-            # restore adjacent points that were marked as used but not part of the line
+            # restore all adjacent points
             for pt in adjacent_points:
-                if pt != next_point:
-                    gray[pt[1], pt[0]] = WHITE
+                gray[pt[1], pt[0]] = WHITE
             return points, avg_angle
 
         points.append(next_point)
         sum_unitXY_so_far = (sum_unitXY_so_far[0] + np.cos(best_angle), sum_unitXY_so_far[1] + np.sin(best_angle))
+
+        # restore adjacent points that were marked as used but not part of the line
+        for pt in adjacent_points:
+            if pt != next_point:
+                gray[pt[1], pt[0]] = WHITE
 
         tol = np.radians(90/(line_length+1))  # tolerance decreases as line gets longer
         if debug:

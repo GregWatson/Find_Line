@@ -25,16 +25,6 @@ def find_lines(bgr_img, len_thresh=10, debug=False):
     if debug: print(f"Initial start point: {start_point}")
 
     while start_point:
-        # # get list of points adjacent to starting point
-        # adjacent_points = get_adjacent_points(gray, start_point)
-        # if len(adjacent_points) == 0:
-        #     if debug:
-        #         print("ERROR: No adjacent points found for the starting point.")
-        #     return lines_found, gray
-
-        # if debug:
-        #     print("Starting point:", start_point)
-        #     print("Adjacent points:", adjacent_points)
 
         points, angle = find_line(start_point, gray, len_thresh=len_thresh, debug=debug)
 
@@ -44,9 +34,6 @@ def find_lines(bgr_img, len_thresh=10, debug=False):
             last_point = points[-1]
             lines_found.append((points, angle))
             if debug: print(f"Added line to lines_found: {points}, {angle:.2f} ")
-            # remove used points from the image
-            # for point in points:
-            #     gray[point[1], point[0]] = 80
 
         # find the next start point somewhere close to the last point.
         start_point = find_local_start_point(gray, last_point, size_thresh=10, color_thresh=127)

@@ -1,6 +1,12 @@
 # core routines used for line finding
 import numpy as np
 
+# compute angular tolerance based on line length, and use it to check if the angle of a new point 
+# is consistent with the average angle of the line so far.
+def get_angle_tol(line_length):
+    return abs(np.arctan2(1.1, line_length)) if line_length > 0 else np.radians(90)
+    
+
 # Calculate angle in radians between the line from start_point to pt and the horizontal axis.
 # Always returns a positive angle between 0 and 2*pi.
 def get_angle(pt, start_point):
@@ -13,7 +19,7 @@ def get_angle(pt, start_point):
 def get_angle_diff(angle1, angle2):
     diff = abs(angle1 - angle2)
     if diff > np.pi:
-        diff = 2*np.pi - diff
+        diff = abs(2*np.pi - diff)
     return diff
 
 def find_initial_start_point(gray):

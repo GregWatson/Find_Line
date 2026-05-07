@@ -1,5 +1,5 @@
 import numpy as np
-from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff
+from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff, get_angle_tol
 
 WHITE = 255
 BLACK = 0
@@ -33,7 +33,7 @@ def find_min_len_line(start_point, points_so_far, gray, sum_unitXY_so_far = (0,0
             print(f"Trying adjacent point {next_point} of {len(raw_adjacent_points)} from current point {current_point}. Angle is {np.degrees(angle):.1f} degrees, avg angle so far is {np.degrees(avg_angle_so_far):.1f} degrees.")
 
         if len(points_so_far) > 1: # check angle deviation from average so far
-            angle_tol = np.radians(90/len(points_so_far))  # tolerance decreases as line gets longer
+            angle_tol = get_angle_tol(len(points_so_far))  # tolerance decreases as line gets longer
             angle_diff = get_angle_diff(angle, avg_angle_so_far)
             if angle_diff > angle_tol:
                 if debug:
