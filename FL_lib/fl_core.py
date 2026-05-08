@@ -4,7 +4,7 @@ import numpy as np
 # compute angular tolerance based on line length, and use it to check if the angle of a new point 
 # is consistent with the average angle of the line so far.
 def get_angle_tol(line_length):
-    return abs(np.arctan2(1.1, line_length)) if line_length > 0 else np.radians(90)
+    return abs(np.arctan2(1.8, line_length)) if line_length > 0 else np.radians(90)
     
 
 # Calculate angle in radians between the line from start_point to pt and the horizontal axis.

@@ -1,5 +1,5 @@
 import numpy as np
-from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff
+from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff, get_angle_tol
 from FL_lib.find_min_len_line import find_min_len_line
 
 BLACK = 0
@@ -30,8 +30,8 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
         adjacent_points = get_adjacent_points(gray, last_point)
         line_length = np.hypot(last_point[0] - start_point[0], last_point[1] - start_point[1]   )
         avg_angle = np.arctan2(sum_unitXY_so_far[1]/len(points), sum_unitXY_so_far[0]/len(points))
-        tol = np.radians(90/(line_length+1))  # tolerance decreases as line gets longer
-    
+        tol = get_angle_tol(line_length)  # tolerance decreases as line gets longer
+
         if len(adjacent_points) == 0:
             if debug:
                 print(f"No more adjacent points found. Start {start_point} -> {last_point} len {line_length}  Avg angle: {np.degrees(avg_angle)} degrees")
@@ -70,7 +70,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
             if pt != next_point:
                 gray[pt[1], pt[0]] = WHITE
 
-        tol = np.radians(90/(line_length+1))  # tolerance decreases as line gets longer
+        tol = get_angle_tol(line_length)  # tolerance decreases as line gets longer
         if debug:
             print(f"Continuing to {next_point} at angle {np.degrees(best_angle):.2f} degrees  Diff = {np.degrees(best_angle_diff):.2f} degrees  Tol={np.degrees(tol):.3f}  Line length: {line_length:.1f}")
 
