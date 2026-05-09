@@ -29,7 +29,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
         next_point = None
         adjacent_points = get_adjacent_points(gray, last_point)
         line_length = np.hypot(last_point[0] - start_point[0], last_point[1] - start_point[1]   )
-        avg_angle = np.arctan2(sum_unitXY_so_far[1]/len(points), sum_unitXY_so_far[0]/len(points))
+        avg_angle = get_angle((sum_unitXY_so_far[0],sum_unitXY_so_far[1]), (0,0))
         tol = get_angle_tol(line_length)  # tolerance decreases as line gets longer
 
         if len(adjacent_points) == 0:
@@ -56,7 +56,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
 
         if best_angle_diff > tol:
             if debug:
-                print(f"Angle difference {np.degrees(best_angle_diff)} exceeds tolerance. Stopping line. (Len is {len(points)}")
+                print("Angle difference {:.2f} exceeds tolerance. Returning valid line. (Len is {:.1f})".format(np.degrees(best_angle_diff), len(points)))
             # restore all adjacent points
             for pt in adjacent_points:
                 gray[pt[1], pt[0]] = WHITE

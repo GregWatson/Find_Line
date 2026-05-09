@@ -12,7 +12,7 @@ def main():
     args = parser.parse_args()
 
     if args.tests:
-        test_params = { 'CANVAS_SIZE': 40, 
+        test_params = { 'CANVAS_SIZE': 20, 
                         'LEN_THRESH':10,
                         'LOG': False,
                         'debug': args.debug }

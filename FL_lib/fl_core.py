@@ -1,10 +1,13 @@
 # core routines used for line finding
 import numpy as np
 
+def points_are_close(pt1, pt2, thresh=10):
+    return np.linalg.norm(np.array(pt1) - np.array(pt2)) < thresh
+
 # compute angular tolerance based on line length, and use it to check if the angle of a new point 
 # is consistent with the average angle of the line so far.
 def get_angle_tol(line_length):
-    return abs(np.arctan2(1.8, line_length)) if line_length > 0 else np.radians(90)
+    return abs(np.arctan2(1.8, line_length)) if line_length > 0 else np.pi/2
     
 
 # Calculate angle in radians between the line from start_point to pt and the horizontal axis.
@@ -62,3 +65,9 @@ def get_adjacent_points(gray, point, thresh=255):
                 if gray[new_y, new_x] >= thresh:
                     adjacent_points.append((new_x, new_y))
     return adjacent_points
+
+# returns 6 color palette and names. Colors are (B:G:R) tuples.
+def get_palette(palette_size=6):
+    palette = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
+    names = ["Blue", "Green", "Red", "Cyan", "Magenta", "Yellow"]
+    return (palette[:palette_size], names[:palette_size])
