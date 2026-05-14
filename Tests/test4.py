@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 from FL_lib.find_lines import find_lines
 from FL_lib.fl_core import get_palette
+from FL_lib.find_corners import find_corners
 
 # Find lines in a jigsaw piece outline
 def run_test_4(test_params):
@@ -33,7 +34,7 @@ def run_test_4(test_params):
         start_pt = (points[0][0] + dx, points[0][1])
         end_pt = (points[-1][0] + dx, points[-1][1])
         length = np.linalg.norm(np.array(points[-1]) - np.array(points[0]))
-        print(f"Line {i}: from {points[0]} to {points[-1]}, length = {length:.2f},  angle {np.degrees(angle):.2f} degrees. color {color_names[color_index % len(color_names)]}")
+        # print(f"Line {i}: from {points[0]} to {points[-1]}, length = {length:.2f},  angle {np.degrees(angle):.2f} degrees. color {color_names[color_index % len(color_names)]}")
         if length > 15:
             cv2.line(resized_image, start_pt, end_pt, palette[color_index % len(palette)], thickness=3)
             if color_index == len(palette)-1:
@@ -43,10 +44,26 @@ def run_test_4(test_params):
                 dx = -3
             else:
                 dx = 3
-    cv2.imshow("Resized Image", resized_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+
+    # get corners
+    corners = find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug=test_params['debug'])
+    if len(corners) < 4:
+        print(f"Test {test_num} failed: Expected 4 corners, found {len(corners)}")
+        return False
+    for i,corner in enumerate(corners[0:4]):
+        if test_params['debug']:
+            print(f"Corner {corner[0]}: point={corner[1]}, angle_diff={np.degrees(corner[2]):.2f} degrees")
+            cv2.circle(resized_image, corner[1], 10, (0, 128, 255), -1)
+
+    expected_corners = [(434, 121), (226, 21), (313, 389), (153, 249)]
+    for i, corner in enumerate(corners[0:4]):
+        if not (abs(corner[1][0] - expected_corners[i][0]) <= 2 and abs(corner[1][1] - expected_corners[i][1]) <= 2):
+            print(f"*** FAIL ***: Test {test_num} failed: Expected corner at {expected_corners[i]}, found at {corner[1]}")
+            return False
+
+    if test_params['debug']:
+        cv2.imshow("Resized Image", resized_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     return True
-
-

@@ -1,8 +1,11 @@
 # core routines used for line finding
 import numpy as np
 
+def get_distance_between_2_points(pt1, pt2):
+    return np.linalg.norm(np.array(pt1) - np.array(pt2))
+
 def points_are_close(pt1, pt2, thresh=10):
-    return np.linalg.norm(np.array(pt1) - np.array(pt2)) < thresh
+    return get_distance_between_2_points(pt1, pt2) < thresh
 
 # compute angular tolerance based on line length, and use it to check if the angle of a new point 
 # is consistent with the average angle of the line so far.
