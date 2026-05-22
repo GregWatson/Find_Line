@@ -4,21 +4,22 @@ import sys
 from FL_lib.fl_core import find_initial_start_point, find_local_start_point, get_angle_diff, get_angle_tol, points_are_close, get_angle
 from FL_lib.find_line import find_line
 
-# Finds lines within the given BGR image and returns a list of lines, 
-# where each line is represented as a tuple of (points, angle). 
-# Points is a list of (x, y) coordinates along the line, 
+# Finds lines within the given image (BGR color or grayscale)
+# where each line is represented as a tuple of (points, angle) 
+# and points is a list of (x, y) coordinates along the line, 
 # and angle is the average angle of the line in radians. 
-# The function also returns the grayscale version of the input image 
-# with the lines marked in grey. 
 # The len_thresh parameter specifies the minimum length of a line to be considered valid. 
 # Lines shorter than this threshold will be discarded. 
 
 BLACK = 0
 
-def find_lines(bgr_img, len_thresh=10, debug=False):
+def find_lines(img, len_thresh=10, debug=False):
     lines_found = []
-    # Convert the image to simple binary format (grayscale)
-    gray = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
+    # Convert the image to simple binary format (grayscale) if color
+    if len(img.shape) == 3 and img.shape[2] == 3:
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = img.copy()
 
     #find a starting point for the line
     start_point = find_initial_start_point(gray)
@@ -62,4 +63,4 @@ def find_lines(bgr_img, len_thresh=10, debug=False):
             if debug:
                 print("Couldn't find a new start point near last end point - searching entire image.")
             start_point = find_initial_start_point(gray)
-    return lines_found, gray
+    return lines_found

@@ -4,6 +4,8 @@ import argparse
 import sys
 from FL_lib.find_lines import find_lines
 from Tests.tests import run_tests
+from FL_lib.pre_proc_image import pre_process_image
+from FL_lib.polygon_angles import get_polygon_angles
 
 def main():
     parser = argparse.ArgumentParser(description="Piece Project CLI")
@@ -19,30 +21,40 @@ def main():
         passed, total = run_tests(test_params)
         return
     
-    SIZE = 20
+    SIZE = 500
     # create a white canvas of size SIZExSIZE
     img = np.zeros((SIZE, SIZE,3), dtype=np.uint8)
 
-    # draw a line
-    cv2.line(img, (1,18), (18,1), (255, 255, 255), thickness=1)
+    # Define vertices of the polygon (must be int32)
+    poly_points = np.array([[100, 100], [300, 100], [250, 150], [250, 300], [100, 300]], np.int32)
 
-    # draw line interference
-    # cv2.line(img, (1,2), (2,1), (255, 255, 255), thickness=1)
+    cv2.fillPoly(img, [poly_points], color=(255, 255, 255)) 
 
-    lines_found, gray = find_lines(img, len_thresh=10, debug=args.debug)
+    cv2.imshow("Line", img)
+
+    # get image with just edges
+    pre_processed_image = pre_process_image(img, debug=args.debug)
+    edges = cv2.Canny(pre_processed_image, 50, 150, apertureSize=3)
+
+    # cv2.line(img, (1,18), (18,1), (255, 255, 255), thickness=1)
+
+    lines_found = find_lines(edges, len_thresh=10, debug=args.debug)
     if not len(lines_found):
-        print("No lines found.")
+        print("No lines were found.")
     else:
         print(f"Found {len(lines_found)} lines:")
         for line in lines_found:
             points, angle = line
             print(f"Found line {points[0]} - {points[-1]} with angle: {np.degrees(angle):.1f} degrees")
 
-    # SCALE IMAGE TO 500X500
-    scaled_img = cv2.resize(gray, (500, 500), interpolation=cv2.INTER_NEAREST)
+    cv2.imshow("Edges", edges)
+
+    angles = get_polygon_angles(poly_points)
+    print("Polygon angles (inner, outer):")
+    for i, (inner, outer) in enumerate(angles):
+        print(f"Vertex {i} {poly_points[i]}: Inner angle = {inner:.2f} degrees, Outer angle = {outer:.2f} degrees")
 
     # Display the image
-    cv2.imshow("Line", scaled_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
