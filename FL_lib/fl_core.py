@@ -1,5 +1,6 @@
 # core routines used for line finding
 import numpy as np
+import math
 
 def rotate_point(point, center, angle_rad):
     # Rotate a point around a center by a given angle in radians.
@@ -21,7 +22,7 @@ def rotate_line(line, center, angle_rad):
     return (new_start, new_end)
 
 def get_distance_between_2_points(pt1, pt2):
-    return np.linalg.norm(np.array(pt1) - np.array(pt2))
+    return math.sqrt((pt1[0] - pt2[0])**2 + (pt1[1] - pt2[1])**2)
 
 def points_are_close(pt1, pt2, thresh=10):
     return get_distance_between_2_points(pt1, pt2) < thresh
@@ -29,7 +30,7 @@ def points_are_close(pt1, pt2, thresh=10):
 # compute angular tolerance based on line length, and use it to check if the angle of a new point 
 # is consistent with the average angle of the line so far.
 def get_angle_tol(line_length):
-    return abs(np.arctan2(1.8, line_length)) if line_length > 0 else np.pi/2
+    return abs(np.arctan2(1.9, line_length)) if line_length > 0 else np.pi/2
     
 
 # Calculate angle in radians between the line from start_point to pt and the horizontal axis.

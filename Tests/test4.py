@@ -23,7 +23,7 @@ def run_test_4(test_params):
         min_length = test_params['LEN_THRESH']
         min_length = 15
 
-        lines_found, _ = find_lines(image, len_thresh=min_length, debug=test_params['debug'])
+        lines_found = find_lines(image, len_thresh=min_length, debug=test_params['debug'])
         if (test_params['debug']):
             print(f"-- Found {len(lines_found)} lines in the image with length of at least {min_length} pixels.")
         palette, color_names = get_palette(palette_size=6)
@@ -48,7 +48,8 @@ def run_test_4(test_params):
                     dx = 3
 
         # get corners
-        corners = find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug=test_params['debug'])
+        lines_found_end_points = [(line[0][0], line[0][-1]) for line in lines_found]
+        corners = find_corners(lines_found_end_points, corner_thresh=50, end_to_end_dist_thresh=20, debug=test_params['debug'])
         if len(corners) < 4:
             print(f"Test {test_num} failed: Expected 4 corners, found {len(corners)}")
             return False
@@ -57,19 +58,23 @@ def run_test_4(test_params):
                 print(f"Corner {corner[0]}: point={corner[1]}, angle_diff={np.degrees(corner[2]):.2f} degrees")
                 cv2.circle(resized_image, corner[1], 10, (0, 128, 255), -1)
 
-        all_expected_corners = { "Edges/edges_B.png":[(434, 121), (226, 21), (313, 389), (153, 249)],
+        if test_params['debug']:
+            cv2.imshow(f"Edge Image {img_name}", resized_image)
+            cv2.waitKey(0)
+
+
+        all_expected_corners = { "Edges/edges_B.png":[(227,20), (313, 389), (434, 121), (153, 249)],
                                  "Edges/edges_C.png":[(157,179), (133,326), (322,365), (323,158)],
                                  "Edges/edges_D.png":[(1,1), (1,1), (1,1), (1,1)] 
                               }
         expected_corners = all_expected_corners[img_name]
         
         for i, corner in enumerate(corners[0:4]):
-            if not (abs(corner[1][0] - expected_corners[i][0]) <= 2 and abs(corner[1][1] - expected_corners[i][1]) <= 2):
-                print(f"*** FAIL ***: Test {test_num} failed: Expected corner at {expected_corners[i]}, found at {corner[1]}")
+            corner_x = int(corner[1][0])
+            corner_y = int(corner[1][1])
+            if not (abs(corner_x - expected_corners[i][0]) <= 2 and abs(corner_y - expected_corners[i][1]) <= 2):
+                print(f"*** FAIL ***: Test {test_num} failed: Image:{img_name} Expected corner index {i} at {expected_corners[i]}, found at {corner_x}, {corner_y}")
                 return False
-
-        if test_params['debug']:
-            cv2.imshow(f"Edge Image {img_name}", resized_image)
 
     if test_params['debug']:
         cv2.waitKey(0)

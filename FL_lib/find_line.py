@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff, get_angle_tol
 from FL_lib.find_min_len_line import find_min_len_line
@@ -12,6 +14,22 @@ WHITE = 255
 # On success, returns the list of points along the line and the average angle of the line 
 # in radians.
 
+# Helper function. Once we have a line then delete any points either side of the line if 
+# they are not part of the line.
+# The motivation here is to remove any extraneous points that were included in the initial 
+# line detection but are not actually part of the line.
+def clean_up_line(points, gray, debug=False):
+    for point in points:
+        for dx in [-1, 0, 1]:
+            for dy in [-1, 0, 1]:
+                x = point[0] + dx
+                y = point[1] + dy
+                if x < 0 or x >= gray.shape[1] or y < 0 or y >= gray.shape[0]:
+                    continue
+                gray[y, x] = BLACK
+
+
+# Main function to find a line in a grayscale image.
 def find_line(start_point, gray, len_thresh=10, debug=False):
 
     # first, see if we can find a line that is len_thresh or more pixels long,
@@ -33,14 +51,18 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
         tol = get_angle_tol(line_length)  # tolerance decreases as line gets longer
 
         if len(adjacent_points) == 0:
+            clean_up_line(points, gray, debug=debug)
             if debug:
                 print(f"No more adjacent points found. Start {start_point} -> {last_point} len {line_length}  Avg angle: {np.degrees(avg_angle)} degrees")
-            return [start_point] + points, avg_angle
+            if points[0][0] != start_point[0] or points[0][1] != start_point[1]:
+                return [start_point] + points, avg_angle
+            else:
+                return points, avg_angle
         else:
             if debug:
                 print(f"Found {len(adjacent_points)} adjacent points: {adjacent_points}")
 
-        # clear adajacent points from the image so we don't reuse them
+        # clear adjacent points from the image so we don't reuse them
         for pt in adjacent_points:
             gray[pt[1], pt[0]] = BLACK
 
@@ -49,6 +71,8 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
         for point in adjacent_points:
             angle = get_angle(point, start_point)
             angle_diff = get_angle_diff(angle, avg_angle)
+            if debug:
+                print(f"  Point {point}: angle={np.degrees(angle):.2f} degrees, angle_diff={np.degrees(angle_diff):.2f} degrees")
             if angle_diff < best_angle_diff:
                 best_angle_diff = angle_diff
                 next_point = point
@@ -56,10 +80,11 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
 
         if best_angle_diff > tol:
             if debug:
-                print("Angle difference {:.2f} exceeds tolerance. Returning valid line. (Len is {:.1f})".format(np.degrees(best_angle_diff), len(points)))
+                print("Angle difference {:.2f} exceeds tolerance {:.2f}. Returning valid line. (Len is {:.1f})".format(np.degrees(best_angle_diff), np.degrees(tol), len(points)))
             # restore all adjacent points
             for pt in adjacent_points:
                 gray[pt[1], pt[0]] = WHITE
+            clean_up_line(points, gray, debug=debug)
             return points, avg_angle
 
         points.append(next_point)
@@ -69,6 +94,7 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
         for pt in adjacent_points:
             if pt != next_point:
                 gray[pt[1], pt[0]] = WHITE
+
 
         tol = get_angle_tol(line_length)  # tolerance decreases as line gets longer
         if debug:

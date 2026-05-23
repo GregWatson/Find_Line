@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 def edge(a, b):
     """Return vector from point a to point b."""
@@ -37,16 +38,16 @@ def get_polygon_angles(vertices):
         u = edge(p_curr, p_prev) # incoming edge
         v = edge(p_curr, p_next) # outgoing edge
 
-        theta = angle_between(u, v)
+        theta = np.radians(angle_between(u, v))
         turn = cross(u, v)
 
         if turn > 0:
             # left turn → convex vertex
             outer = theta
-            inner = 360 - theta
+            inner = np.pi * 2 - theta
         else:
             # right turn → convex vertex
-            outer = 360 - theta
+            outer = np.pi * 2 - theta
             inner = theta
 
         results.append((inner, outer))

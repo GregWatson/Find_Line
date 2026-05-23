@@ -1,47 +1,90 @@
 import numpy as np
 from FL_lib.fl_core import get_angle, get_angle_diff, get_distance_between_2_points
+from FL_lib.polygon_angles import get_polygon_angles
+import math
 
 # Given a list of lines that form the edges of a piece, try to find
 # the corners of a piece.
 # This is a simplified approach that assumes the corners are where lines meet
 # at a "significant" angle (e.g. 90 degrees).
 # Params:
-# - lines_found: list of lines, where each line is represented as a tuple of start and end points
+# - lines_found: list of lines, where each line is represented as a tuple of start and end points.
+#   The lines form the outline of the piece in clockwise order. The end point of a line might not 
+#   be the same as the start point of the next line. If they are close then we treat them as the same, 
+#   but if they are more than a threshold distance apart then we ignore the gap and don't consider
+#   them as connected (cannot be a corner).
 # - corner_thresh: minimum angle difference in degrees to consider a corner (e.g. 50 degrees)
 # - end_to_end_dist_thresh: maximum distance between the end of one line and the 
 #   start of the next line to consider them connected (e.g. 20 pixels)
 # Returns a list of corners, where each corner is represented as a tuple of (corner_x, point, angle_diff) where:
 # - corner_x is a value that represents how "corner-like" this corner is, which is a function of the 
 #   angle difference and the lengths of the lines. We can use this to sort the corners and only keep the most "corner-like" corners.
-# - point is the point of the corner (e.g. the end of line1 or the start of line2, or we could compute an intersection point 
+# - point is the (int(x), int(y)) point of the corner (e.g. the end of line1 or the start of line2, or we could compute an intersection point 
 #   if we want to be more precise)
-# - angle_diff is the angle difference in radians between the two lines that form this corner, which can be useful for 
+# - angle_diff is the EXTERNAL angle in radians between the two lines that form this corner, which can be useful for 
 #   debugging and for further filtering of corners if needed.
+
+# Compute a corner-ish function to evaluate how "corner-like" each potential corner is
+# This function will be used to sort the corners and select the most "corner-like" ones.
+# The angle is the EXTERNAL angle (of a polygon) between the two lines that form the corner.
+def cornerness_function(pt0, pt1, pt2, angle):
+    l1 = get_distance_between_2_points(pt0, pt1)
+    l2 = get_distance_between_2_points(pt1, pt2)
+    return angle * l1 * l2
+
 
 def find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug=False):
     corners = []
+    if not len(lines_found):
+        return corners
     angle_thresh_rad = np.radians(corner_thresh)
-    for i, line1 in enumerate(lines_found):
-        line2 = lines_found[(i + 1) % len(lines_found)]  # wrap around to the first line     
-        angle1 = get_angle(line1[1], line1[0])  # angle of line1 from start to end
-        angle2 = get_angle(line2[1], line2[0])  # angle of line2 from start to end (reversed since we want the angle at the corner)
-        angle_diff = get_angle_diff(angle1, angle2)
-        if angle_diff < angle_thresh_rad:
-            if debug:
-                print(f"Lines {i} and {(i+1)%len(lines_found)} are not a corner. Angle difference is {np.degrees(angle_diff):.2f} degrees.")
-            continue  # not a corner
-        line_separation = get_distance_between_2_points(line1[1], line2[0])
-        if line_separation > end_to_end_dist_thresh:
-            if debug:
-                print(f"Lines {i} and {(i+1)%len(lines_found)} are not a corner. End-to-end distance is {line_separation:.2f} pixels.")
-            continue  # not a corner
-        line1_length = get_distance_between_2_points(line1[0], line1[1])
-        line2_length = get_distance_between_2_points(line2[0], line2[1])
-        # compute a corner point as a function of the length of the lines and the angle between them.
-        corner_x = line1_length * line2_length * angle_diff
-        corners.append((corner_x, line1[1], angle_diff))
 
-    corners.sort(key=lambda x: x[0], reverse=True)  # sort by corner_x value, which is a function of line lengths and angle difference, so that the most "corner-like" corners are first.
+    # First, create a fully closed polygon from the lines. If the end of one line is close to the start of 
+    # the next line, we consider them connected and we change the points to be the average of the two points.
+    # If they are too far apart then we introduce a fake line to just close the polygon but will 
+    # not be used in the corner detection.
+
+    polygon = []
+    for i in range(len(lines_found)):
+        line1 = lines_found[i]
+        if debug:
+            print(f"Processing vertex {i}: ",end='')
+        line2 = lines_found[(i + 1) % len(lines_found)]
+        end1 = line1[1]
+        start2 = line2[0]
+        distance = get_distance_between_2_points(end1, start2)
+        if debug:
+            print(f" Distance {end1} - {start2}: {distance}", end='')
+        if distance <= end_to_end_dist_thresh:
+            # If the end of the first line is close to the start of the second line, average the points
+            avg_x = (end1[0] + start2[0]) / 2
+            avg_y = (end1[1] + start2[1]) / 2
+            polygon.append([int(avg_x), int(avg_y)])
+            if debug:
+                print(" So averaged to [" + str(avg_x) + ", " + str(avg_y) + "]")
+        else:
+            # If they are too far apart, we'll handle this later when checking for corners
+            polygon.append([int(end1[0]), int(end1[1])])
+            polygon.append([int(start2[0]), int(start2[1])])
+            if debug:
+                print(f" So added as separate points. {polygon[-2:-1]}")
+
+    poly_points = np.array(polygon, dtype=np.int32)
+    angles = get_polygon_angles(poly_points)
+
+    #print(f"Polygon points: {poly_points}")
+    #print(f"Polygon angles: {angles}")
+    
+    for i, angle in enumerate(angles):
+        pt0 = poly_points[(i - 1) % len(poly_points)]
+        pt1 = poly_points[i]
+        pt2 = poly_points[(i + 1) % len(poly_points)]
+        cornerness_value = cornerness_function(pt0, pt1, pt2, angle[1]) # outer angle
+        # Store the corner information
+        corners.append((cornerness_value, pt1, angle[1]))
+
+    # Sort the corners by their "corner-ness" (cornerness_value) in descending order
+    corners.sort(key=lambda x: x[0], reverse=True)
 
     # Only have one corner per quadrant, and only keep corners that are above a certain threshold of "corner-ness" (e.g. corner_x > 0.5)
     final_corners = []  

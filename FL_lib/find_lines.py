@@ -31,19 +31,19 @@ def find_lines(img, len_thresh=10, debug=False):
 
         gray[start_point[1], start_point[0]] = BLACK  # remove the starting point from the image
         last_point = start_point # in case there was no line found.
-        if len(points)>1:
+        if len(points)>1: # if we found a valid line
             last_point = points[-1]
             merged = False
             # If this line is very similar in angle to the last line, and close to it, we can consider it part of the same line.
             if len(lines_found) > 0:
                 prev_start_point = lines_found[-1][0][0]
                 prev_last_point = lines_found[-1][0][-1]
-                if points_are_close(points[0], prev_last_point,thresh=2):
+                if points_are_close(points[0], prev_last_point,thresh=3):
                     angle_diff = get_angle_diff(angle, lines_found[-1][1])
-                    if debug: print(f"Angle difference between current line and last line: {np.degrees(angle_diff):.2f} degrees   ({np.degrees(angle):.2f} vs {np.degrees(lines_found[-1][1]):.2f} degrees)")
+                    if debug: print(f"   End Points are close. Angle difference between current line and last line: {np.degrees(angle_diff):.2f} degrees   ({np.degrees(angle):.2f} vs {np.degrees(lines_found[-1][1]):.2f} degrees)")
                     # angle_tol = min(get_angle_tol(len(lines_found[-1][0])), get_angle_tol(len(points)))
                     angle_tol = np.radians(6)  # we can use a fixed angle tolerance here since we are merging lines after they are fully formed, so we don't need to worry about the tolerance being too high at the start of a line.
-                    if debug: print(f"Angle tolerance for merging these lines is: {np.degrees(angle_tol):.2f} degrees. Actual diff is {np.degrees(angle_diff):.2f} degrees.")
+                    if debug: print(f"   Angle tolerance for merging these lines is: {np.degrees(angle_tol):.2f} degrees. Actual diff is {np.degrees(angle_diff):.2f} degrees.")
                     if angle_diff < angle_tol:
                         # If the angle is within the tolerance, we can merge this line with the last line.
                         new_angle = get_angle(last_point, prev_start_point)
@@ -51,6 +51,8 @@ def find_lines(img, len_thresh=10, debug=False):
                         lines_found[-1] = (lines_found[-1][0] + points, new_angle)
                         merged = True
                         if debug: print("Merging current line with last line. New angle is {:.2f} degrees, new length is {:.2f}".format(np.degrees(new_angle), new_len))
+                else:
+                    if debug: print(f"   End points {prev_last_point} and {points[0]} are not close enough to merge the lines.")
             if merged == False:
                 lines_found.append((points, angle))
                 if debug: print(f"No merge: Adding new line with angle {np.degrees(angle):.2f} degrees and length {len(points)}")
