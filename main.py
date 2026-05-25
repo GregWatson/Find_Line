@@ -16,7 +16,7 @@ def main():
 
     if args.tests:
         test_params = { 'CANVAS_SIZE': 20, 
-                        'LEN_THRESH':10,
+                        'LEN_THRESH':15,
                         'LOG': False,
                         'debug': args.debug }
         passed, total = run_tests(test_params)

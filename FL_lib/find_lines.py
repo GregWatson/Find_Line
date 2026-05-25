@@ -9,7 +9,8 @@ from FL_lib.find_line import find_line
 # and points is a list of (x, y) coordinates along the line, 
 # and angle is the average angle of the line in radians. 
 # The len_thresh parameter specifies the minimum length of a line to be considered valid. 
-# Lines shorter than this threshold will be discarded. 
+# Lines shorter than this threshold will be discarded.
+# The image should contain only edges or contours that form the boundaries of objects.
 
 BLACK = 0
 

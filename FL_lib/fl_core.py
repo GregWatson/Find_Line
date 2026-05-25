@@ -1,6 +1,11 @@
 # core routines used for line finding
 import numpy as np
 import math
+import cv2
+
+# return height, width, channels = img.shape
+def get_image_info(image):
+    return image.shape
 
 def rotate_point(point, center, angle_rad):
     # Rotate a point around a center by a given angle in radians.
@@ -48,6 +53,16 @@ def get_angle_diff(angle1, angle2):
         diff = abs(2*np.pi - diff)
     return diff
 
+def find_piece_center(img):
+    # Find the coordinates of all white pixels
+    white_pixels = np.argwhere(img == 255)
+    
+    # Calculate the center of mass
+    center_x = np.mean(white_pixels[:, 1])
+    center_y = np.mean(white_pixels[:, 0])
+    
+    return int(center_x), int(center_y)
+
 def find_initial_start_point(gray):
     for y in range(gray.shape[0]):
         for x in range(gray.shape[1]):
@@ -94,3 +109,10 @@ def get_palette(palette_size=6):
     palette = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255), (0, 255, 255)]
     names = ["Blue", "Green", "Red", "Cyan", "Magenta", "Yellow"]
     return (palette[:palette_size], names[:palette_size])
+
+def draw_lines_on_color_image(image, lines, palette, dx=3, thickness=1):
+    color_index = 0
+    for line in lines:
+        (x1, y1), (x2, y2) = line
+        cv2.line(image, (int(x1+dx), int(y1)), (int(x2+dx), int(y2)), palette[color_index % len(palette)], thickness=thickness)
+        color_index = (color_index + 1) % len(palette)
