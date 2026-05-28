@@ -71,7 +71,7 @@ def find_initial_start_point(gray):
     return None
 
 # Search an ever-expanding circle around the last point, looking for a set pixel.
-def find_local_start_point(gray, last_point, size_thresh=10, color_thresh=255):
+def find_local_start_point(gray, last_point, size_thresh=100, color_thresh=255):
     # print(f"Searching for local start point around {last_point} with size_thresh {size_thresh} and color_thresh {color_thresh}.")
     x, y = last_point
     for dist in range(1, size_thresh + 1):

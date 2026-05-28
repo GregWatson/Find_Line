@@ -15,7 +15,7 @@ def run_test_4(test_params):
     print(f"Running test {test_num}...")
     SIZE = 500
     # create a white canvas of size SIZExSIZE
-    # img_names = ["Edges/edges_B.png", "Edges/edges_C.png"]
+    #img_names = ["Edges/edges_D.png","Edges/edges_C.png"]
     img_names = ["Edges/edges_B.png", "Edges/edges_C.png", "Edges/edges_D.png"]
 
     palette, color_names = get_palette(palette_size=6)
@@ -28,12 +28,12 @@ def run_test_4(test_params):
         min_length = test_params['LEN_THRESH']
 
         cx, cy = find_piece_center(image)
-        rot_angle, cx, cy, lines = find_rotation(image, cx, cy)
+        rot_angle, cx, cy, lines = find_rotation(image, cx, cy, debug=test_params['debug'])
 
-        draw_lines_on_color_image(image, lines, palette)
-        cv2.imshow(f"Orig Image {img_name}", image)
-
-        print(f"Found {len(lines)} lines. Rotation angle: {np.degrees(rot_angle):.2f} degrees")
+        if test_params['debug']:
+            # draw_lines_on_color_image(image, lines, palette)
+            cv2.imshow(f"Orig Image {img_name}", image)
+            print(f"Found {len(lines)} lines. Rotation angle: {np.degrees(rot_angle):.2f} degrees")
 
         rotated_image = rotate_image(image, rot_angle, cx, cy)
         rotated_lines = []
@@ -51,19 +51,18 @@ def run_test_4(test_params):
         if len(corners) < 4:
             print(f"Test {test_num} failed: Expected 4 corners, found {len(corners)}")
             return False
-        for i,corner in enumerate(corners[0:4]):
-            if test_params['debug']:
+        if test_params['debug']:
+            for i,corner in enumerate(corners):
                 print(f"Corner-ness {corner[0]}, point={corner[1]}, angle_diff={np.degrees(corner[2]):.2f} degrees")
-                cv2.circle(rotated_image, corner[1], 10, (0, 128, 255), -1)
+                cv2.circle(rotated_image, corner[1], 10, (100, 150, 250), -1)
 
         if test_params['debug']:
-            cv2.imshow(f"Edge Image {img_name}", rotated_image)
+            cv2.imshow(f"Rotated Image {img_name}", rotated_image)
             cv2.waitKey(0)
 
-
-        all_expected_corners = { "Edges/edges_B.png":[(227,20), (313, 389), (434, 121), (153, 249)],
-                                 "Edges/edges_C.png":[(157,179), (133,326), (322,365), (323,158)],
-                                 "Edges/edges_D.png":[(1,1), (1,1), (1,1), (1,1)] 
+        all_expected_corners = { "Edges/edges_B.png":[(380, 121), (81, 352), (145, 150), (373, 353)],
+                                 "Edges/edges_C.png":[(308, 150), (334, 356), (140, 339), (145, 191)],
+                                 "Edges/edges_D.png":[(348, 388), (391, 157), (165, 156), (80, 361)]
                               }
         expected_corners = all_expected_corners[img_name]
         
@@ -75,7 +74,6 @@ def run_test_4(test_params):
                 return False
 
     if test_params['debug']:
-        cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     return True

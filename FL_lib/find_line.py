@@ -1,4 +1,5 @@
 import sys
+import cv2
 
 import numpy as np
 from FL_lib.fl_core import get_adjacent_points, get_angle, get_angle_diff, get_angle_tol
@@ -13,12 +14,14 @@ WHITE = 255
 # or exhaust all possibilities.
 # On success, returns the list of points along the line and the average angle of the line 
 # in radians.
+# On failure return a list containing ONLY the last point tried.
 
 # Helper function. Once we have a line then delete any points either side of the line if 
 # they are not part of the line.
 # The motivation here is to remove any extraneous points that were included in the initial 
 # line detection but are not actually part of the line.
 def clean_up_line(points, gray, debug=False):
+    x = 0; y = 0
     for point in points:
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
@@ -27,9 +30,16 @@ def clean_up_line(points, gray, debug=False):
                 if x < 0 or x >= gray.shape[1] or y < 0 or y >= gray.shape[0]:
                     continue
                 gray[y, x] = BLACK
+    # if (debug):
+    #     img = gray.copy()
+    #     cv2.circle(img, (x,y), 5, (255, 255, 255), -1)
+    #     cv2.imshow(f"After clean up at {x},{y}", img)
+    #     cv2.waitKey(0)
+
 
 
 # Main function to find a line in a grayscale image.
+# Note: this is destructive to the gray image - points are reset from white to black as they are found.
 def find_line(start_point, gray, len_thresh=10, debug=False):
 
     # first, see if we can find a line that is len_thresh or more pixels long,
@@ -38,8 +48,8 @@ def find_line(start_point, gray, len_thresh=10, debug=False):
     points, sum_unitXY_so_far = find_min_len_line(start_point, [start_point], gray, len_thresh=len_thresh, debug=debug)
     if len(points) < len_thresh: # No valid line
         if debug:
-            print(f"No valid line found starting from {start_point}.")
-        return [], None
+            print(f"No valid line found starting from {start_point}. Last point tried was {points[-1] if points else 'None'}")
+        return points, None
 
     gray[start_point[1], start_point[0]] = BLACK  # mark the starting point as used in the image
     while True:

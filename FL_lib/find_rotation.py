@@ -27,7 +27,7 @@ import cv2
 # returned as a list of tuples of [(x1, y1), (x2, y2)] for the start and end points 
 # of each line.
 
-def find_rotation(img, cx, cy):
+def find_rotation(img, cx, cy, debug=False):
     if img is None:
         print("Error: Image is None")
         return 0
@@ -40,7 +40,7 @@ def find_rotation(img, cx, cy):
 
 
     # Find a set of lines for the outline my own algorithm.
-    full_lines = find_lines(gray)
+    full_lines = find_lines(gray, debug=debug)
     lines = []
     
     # Get lines as just start and end points for easier processing.
@@ -75,9 +75,10 @@ def find_rotation(img, cx, cy):
         bb_xlength = bb_max_x - bb_min_x
         bb_ylength = bb_max_y - bb_min_y
 
-        print(f"center of mass x,y is {cx},{cy}")
-        print(f"center of bounding box x,y is {bb_cx},{bb_cy}.  bb X len={bb_xlength}  bb Y len={bb_ylength}")
-        print(f"Using center of bounding box for rotation: {bb_cx},{bb_cy}")
+        if debug:
+            print(f"center of mass x,y is {cx},{cy}")
+            print(f"center of bounding box x,y is {bb_cx},{bb_cy}.  bb X len={bb_xlength}  bb Y len={bb_ylength}")
+            print(f"Using center of bounding box for rotation: {bb_cx},{bb_cy}")
         cx = bb_cx
         cy = bb_cy
 
@@ -97,12 +98,13 @@ def find_rotation(img, cx, cy):
                     # get angle
             if line_max_length:
                 min_angle = get_angle(max_line[1],max_line[0])
-                print(f"Longest line found: ({x1}, {y1}) to ({x2}, {y2}) with length {length}   (thresh: {len_threshold})  angle {min_angle}")
+                # print(f"Longest line found: ({x1}, {y1}) to ({x2}, {y2}) with length {length}   (thresh: {len_threshold})  angle {min_angle}")
 
         # If we couldn't find a long line then we will just use the bounding box method.
 
         if line_max_length == 0:
-            print("No long lines found. Using bounding box method to find rotation.")
+            if debug:
+                print("No long lines found. Using bounding box method to find rotation.")
             # translate the set of line endings so that cx,cy is at 0,0
             centered_points = []
             for line in lines:
@@ -128,11 +130,12 @@ def find_rotation(img, cx, cy):
                 if area < min_area:
                     min_area = area
                     min_angle = rot_rad
-                    print(f"New min area {area} at angle {rot_angle} degrees")
+                    # print(f"New min area {area} at angle {rot_angle} degrees")
     
     # Don't need a rotation > 90 degrees
     while np.degrees(min_angle) > 90:
         min_angle -= np.pi
         
-    print(f"Lines found: {line_count}.   Angle {np.degrees(min_angle):.2f} degrees")
+    if debug:
+        print(f"Lines found: {line_count}.   Angle {np.degrees(min_angle):.2f} degrees")
     return min_angle, cx, cy, lines

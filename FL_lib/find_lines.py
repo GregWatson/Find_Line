@@ -57,13 +57,19 @@ def find_lines(img, len_thresh=10, debug=False):
             if merged == False:
                 lines_found.append((points, angle))
                 if debug: print(f"No merge: Adding new line with angle {np.degrees(angle):.2f} degrees and length {len(points)}")
-                
+        if len(points) == 1:
+            last_point = points[0]
+
         # find the next start point somewhere close to the last point.
-        start_point = find_local_start_point(gray, last_point, size_thresh=10, color_thresh=127)
+        start_point = find_local_start_point(gray, last_point, size_thresh=50, color_thresh=127)
         if start_point: 
             if debug: print(f"Found next start point: {start_point} which was close to last point {last_point}.") 
         else:
             if debug:
-                print("Couldn't find a new start point near last end point - searching entire image.")
+                print(f"Couldn't find a new start point near last end point {int(last_point[0])},{int(last_point[1])} - searching entire image.")
+                # img = gray.copy()
+                # cv2.circle(img, (int(last_point[0]), int(last_point[1])), 5, (255, 255, 255), -1)
+                # cv2.imshow(f"Image {int(last_point[0])},{int(last_point[1])}", img)
+                # cv2.waitKey(0)
             start_point = find_initial_start_point(gray)
     return lines_found

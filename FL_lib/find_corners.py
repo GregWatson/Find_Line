@@ -1,7 +1,7 @@
 import numpy as np
 from FL_lib.fl_core import get_angle, get_angle_diff, get_distance_between_2_points
 from FL_lib.polygon_angles import get_polygon_angles
-import math
+import cv2
 
 # Given a list of lines that form the edges of a piece, try to find
 # the corners of a piece.
@@ -30,7 +30,12 @@ import math
 def cornerness_function(pt0, pt1, pt2, angle):
     l1 = get_distance_between_2_points(pt0, pt1)
     l2 = get_distance_between_2_points(pt1, pt2)
-    return angle * l1 * l2
+    if abs(angle) < np.pi: # if the angle is very small, it's not a corner
+        corner_ness = 0
+    else:
+        corner_ness = 1.1**np.degrees(abs(angle)-np.pi) * (l1 + l2)
+    # print(f"Corner at {int(pt1[0])},{int(pt1[1])}: angle={int(np.degrees(angle))}, lengths={int(l1)}, {int(l2)  }  Corner-ness={corner_ness}")
+    return corner_ness
 
 
 def find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug=False):
@@ -44,22 +49,26 @@ def find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug
     # If they are too far apart then we introduce a fake line to just close the polygon but will 
     # not be used in the corner detection.
 
+    if debug:
+        for i,l in enumerate(lines_found):
+            print(f"Line: {int(l[0][0])},{int(l[0][1])} ==> {int(l[1][0])},{int(l[1][1])}")
+
     polygon = []
     for i in range(len(lines_found)):
         line1 = lines_found[i]
+        line2 = lines_found[(i + 1) % len(lines_found)]
         if debug:
             print(f"Processing vertex {i}: ",end='')
-        line2 = lines_found[(i + 1) % len(lines_found)]
         end1 = line1[1]
         start2 = line2[0]
         distance = get_distance_between_2_points(end1, start2)
         if debug:
-            print(f" Distance {end1} - {start2}: {distance}", end='')
+            print(f" Distance {int(end1[0])}, {int(end1[1])} - {int(start2[0])}, {int(start2[1])    }: {int(distance)}", end='')
         if distance <= end_to_end_dist_thresh:
             # If the end of the first line is close to the start of the second line, average the points
-            avg_x = (end1[0] + start2[0]) / 2
-            avg_y = (end1[1] + start2[1]) / 2
-            polygon.append([int(avg_x), int(avg_y)])
+            avg_x = int((end1[0] + start2[0]) / 2)
+            avg_y = int((end1[1] + start2[1]) / 2)
+            polygon.append([avg_x, avg_y])
             if debug:
                 print(" So averaged to [" + str(avg_x) + ", " + str(avg_y) + "]")
         else:
@@ -69,16 +78,28 @@ def find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug
             if debug:
                 print(f" So added as separate points. {polygon[-2:-1]}")
 
+    # debug by displaying an image with points joined by arrows in order
+    if debug and len(polygon) > 1:
+        SIZE = 500
+        img = np.zeros((SIZE, SIZE,3), dtype=np.uint8)
+        for i, point in enumerate(polygon):
+            cv2.arrowedLine(img, (point[0], point[1]), (polygon[(i + 1) % len(polygon)][0], polygon[(i + 1) % len(polygon)][1]), (0, 150, 0), 1)
+            cv2.putText(img, f"{i}", (point[0], point[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.imshow(f"Polygon ordering", img)
+        # cv2.waitKey(0)
+
     poly_points = np.array(polygon, dtype=np.int32)
     angles = get_polygon_angles(poly_points)
 
-    #print(f"Polygon points: {poly_points}")
-    #print(f"Polygon angles: {angles}")
+    if debug:
+        for i, angle in enumerate(angles):
+            print(f"Vertex {i}: point={int(poly_points[i][0])},{int(poly_points[i][1])}, inner angle={int(np.degrees(angle[0]))}, outer angle={int(np.degrees(angle[1]))}")
     
     for i, angle in enumerate(angles):
         pt0 = poly_points[(i - 1) % len(poly_points)]
         pt1 = poly_points[i]
         pt2 = poly_points[(i + 1) % len(poly_points)]
+        if debug: print(f"Corner {i}:", end='')
         cornerness_value = cornerness_function(pt0, pt1, pt2, angle[1]) # outer angle
         # Store the corner information
         corners.append((cornerness_value, pt1, angle[1]))
@@ -107,9 +128,12 @@ def find_corners(lines_found, corner_thresh=50, end_to_end_dist_thresh=20, debug
             if debug:
                 print(f"Skipping corner at point {point} as quadrant {quad_x},{quad_y} is used.")
 
-    for i, corner in enumerate(final_corners):
-        if debug:
+    if debug:
+        for i, corner in enumerate(final_corners):
             print(f"Corner {i}: corner_x={corner[0]:.2f}, point={corner[1]}, angle_diff={np.degrees(corner[2]):.2f} degrees")
+        for i, corner in enumerate(final_corners):
+            print(f"({corner[1][0]}, {corner[1][1]}), ", end='')
+        print
 
     return final_corners
 

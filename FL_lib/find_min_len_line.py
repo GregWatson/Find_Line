@@ -11,13 +11,14 @@ BLACK = 0
 # On success, returns the list of points along the line and the sum of X,Y coordinates of unit vectors of the angles of the points so far.
 # - sum_unitXY_so_far is the sum of the X and Y of unit vectors of the angles of the points so far, 
 #   which we use to calculate the average angle as we go along without having to recalculate it from scratch each time.
+# On failure return ONLY the LAST point we looked at.
 def find_min_len_line(start_point, points_so_far, gray, sum_unitXY_so_far = (0,0), len_thresh=10, debug=False):
     current_point = points_so_far[-1]
     gray[current_point[1], current_point[0]] = BLACK
 
     raw_adjacent_points = get_adjacent_points(gray, current_point)
     if len(raw_adjacent_points) == 0:
-        return [], None
+        return [current_point], None
     
     for pt in raw_adjacent_points:
         gray[pt[1], pt[0]] = BLACK
@@ -56,7 +57,7 @@ def find_min_len_line(start_point, points_so_far, gray, sum_unitXY_so_far = (0,0
                 print(f"  Angle difference {np.degrees(angle_diff):.1f} within tolerance {np.degrees(angle_tol):.1f}. Continuing to point {next_point}.")
 
         all_points, new_sum_unitXY = find_min_len_line(start_point, points_so_far + [next_point], gray, (sum_unitXY_so_far[0] + np.cos(angle), sum_unitXY_so_far[1] + np.sin(angle)), len_thresh, debug)
-        if all_points: # we found a line
+        if len(all_points) > 1: # we found a line
             for pt in raw_adjacent_points:
                 if pt not in all_points:
                     gray[pt[1], pt[0]] = WHITE
@@ -69,5 +70,5 @@ def find_min_len_line(start_point, points_so_far, gray, sum_unitXY_so_far = (0,0
     # tried all adjacent points and couldn't find a valid line. Restore them and return failure.
     for pt in raw_adjacent_points:
         gray[pt[1], pt[0]] = WHITE
-    return [], None
+    return [current_point], None
 
