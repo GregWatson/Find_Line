@@ -25,7 +25,7 @@ def run_test_2(test_params):
         # draw line interference
         cv2.line(img, (1,2),(2,1), (255, 255, 255), thickness=1)
 
-        lines_found, _ = find_lines(img, test_params['LEN_THRESH'], debug=test_params['debug'])
+        lines_found = find_lines(img, test_params['LEN_THRESH'], debug=test_params['debug'])
 
         if len(lines_found) != 1:
             print(f"Test {test_num} failed: Expected 1 line, found {len(lines_found)}")

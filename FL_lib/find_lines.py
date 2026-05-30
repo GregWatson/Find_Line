@@ -4,7 +4,7 @@ import sys
 from FL_lib.fl_core import find_initial_start_point, find_local_start_point, get_angle_diff, get_angle_tol, points_are_close, get_angle
 from FL_lib.find_line import find_line
 
-# Finds lines within the given image (BGR color or grayscale)
+# Returns a list of lines found within the given image (BGR color or grayscale)
 # where each line is represented as a tuple of (points, angle) 
 # and points is a list of (x, y) coordinates along the line, 
 # and angle is the average angle of the line in radians. 
@@ -59,6 +59,11 @@ def find_lines(img, len_thresh=10, debug=False):
                 if debug: print(f"No merge: Adding new line with angle {np.degrees(angle):.2f} degrees and length {len(points)}")
         if len(points) == 1:
             last_point = points[0]
+
+        # if debug:
+        #     scaled_img = cv2.resize(gray, (500, 500), interpolation=cv2.INTER_NEAREST)
+        #     cv2.imshow("Initial", scaled_img)
+        #     cv2.waitKey(0)
 
         # find the next start point somewhere close to the last point.
         start_point = find_local_start_point(gray, last_point, size_thresh=50, color_thresh=127)

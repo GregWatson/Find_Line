@@ -1,59 +1,79 @@
+import sys
+
 import cv2
 import numpy as np
-from FL_lib.find_lines import find_lines
+from FL_lib import find_rotation, rotate_image
+from FL_lib.fl_core import draw_lines_on_color_image, find_piece_center, get_distance_between_2_points, get_palette, rotate_point
+from FL_lib.find_corners import find_corners
+from FL_lib.pre_proc_image import pre_process_image
+from FL_lib.find_rotation import find_rotation
+from FL_lib.rotate_image import rotate_image
 
-# Draw square spiral
+# Find lines in a jigsaw piece outline
 def run_test_3(test_params):
     test_num = 3
     print(f"Running test {test_num}...")
-    SIZE = test_params['CANVAS_SIZE']
+    SIZE = 500
     # create a white canvas of size SIZExSIZE
-    img = np.zeros((SIZE, SIZE,3), dtype=np.uint8)
-    WHITE = (255,255,255)
+    #img_names = ["Edges/edges_D.png","Edges/edges_C.png"]
+    img_names = ["Edges/edges_B.png", "Edges/edges_C.png", "Edges/edges_D.png"]
 
-    x=1; y=1; line_len = SIZE-4
-    lines_drawn = 0
-    exp_lines=[]
-    while line_len > 11:
-        # draw line from (x,y) to (x+line_len,y)
-        cv2.line(img, (x,y), (x+line_len,y), WHITE, thickness=1)
-        exp_lines.append(((x,y),(x+line_len,y+1)))
-        cv2.line(img, (x+line_len,y), (x+line_len,y+line_len), WHITE, thickness=1)
-        exp_lines.append(((x+line_len,y+2),(x+line_len-1,y+line_len)))
-        cv2.line(img, (x+line_len,y+line_len), (x,y+line_len), WHITE, thickness=1)
-        exp_lines.append(((x+line_len-2,y+line_len),(x,y+line_len-1)))
-        cv2.line(img, (x, y+line_len), (x,y+2), WHITE, thickness=1)
-        exp_lines.append(((x,y+line_len-2),(x+1,y+2)))
-        cv2.line(img, (x, y+2), (x+2,y+2), WHITE, thickness=1)
-        lines_drawn += 4
-        x=x+2; y=y+2; line_len -= 4
-    lines_drawn -=1  # last line ends up too short
+    palette, color_names = get_palette(palette_size=6)
+
+    for img_name in img_names:
+        image = cv2.imread(img_name)
+        if image is None:
+            print(f"Error: Could not load image from {img_name}. Please check the file path and ensure the image exists.")
+            sys.exit(1)
+        min_length = test_params['LEN_THRESH']
+
+        cx, cy = find_piece_center(image)
+        rot_angle, cx, cy, lines = find_rotation(image, cx, cy, debug=test_params['debug'])
+
+        if test_params['debug']:
+            # draw_lines_on_color_image(image, lines, palette)
+            cv2.imshow(f"Orig Image {img_name}", image)
+            print(f"Found {len(lines)} lines. Rotation angle: {np.degrees(rot_angle):.2f} degrees")
+
+        rotated_image = rotate_image(image, rot_angle, cx, cy)
+        rotated_lines = []
+        for line in lines:
+            p1_rot = rotate_point(line[0], (cx,cy), rot_angle)
+            p2_rot = rotate_point(line[1], (cx,cy), rot_angle)
+            rotated_lines.append((p1_rot, p2_rot))
+
+
+        draw_lines_on_color_image(rotated_image, rotated_lines, palette, dx=3)
+
+        # get corners
+        corners = find_corners(rotated_lines, corner_thresh=50, end_to_end_dist_thresh=20, debug=test_params['debug'])
+
+        if len(corners) < 4:
+            print(f"Test {test_num} failed: Expected 4 corners, found {len(corners)}")
+            return False
+        if test_params['debug']:
+            for i,corner in enumerate(corners):
+                print(f"Corner-ness {corner[0]}, point={corner[1]}, angle_diff={np.degrees(corner[2]):.2f} degrees")
+                cv2.circle(rotated_image, corner[1], 10, (100, 150, 250), -1)
+
+        if test_params['debug']:
+            cv2.imshow(f"Rotated Image {img_name}", rotated_image)
+            cv2.waitKey(0)
+
+        all_expected_corners = { "Edges/edges_B.png":[(380, 121), (81, 352), (145, 150), (373, 353)],
+                                 "Edges/edges_C.png":[(308, 150), (334, 356), (140, 339), (145, 191)],
+                                 "Edges/edges_D.png":[(348, 388), (391, 157), (165, 156), (80, 361)]
+                              }
+        expected_corners = all_expected_corners[img_name]
+        
+        for i, corner in enumerate(corners[0:4]):
+            corner_x = int(corner[1][0])
+            corner_y = int(corner[1][1])
+            if not (abs(corner_x - expected_corners[i][0]) <= 2 and abs(corner_y - expected_corners[i][1]) <= 2):
+                print(f"*** FAIL ***: Test {test_num} failed: Image:{img_name} Expected corner index {i} at {expected_corners[i]}, found at {corner_x}, {corner_y}")
+                return False
 
     if test_params['debug']:
-        scaled_img = cv2.resize(img, (500, 500), interpolation=cv2.INTER_NEAREST)
-        cv2.imshow("Initial", scaled_img)
-
-    lines_found, gray = find_lines(img, test_params['LEN_THRESH'], debug=test_params['debug'])
-
-    if test_params['debug']:
-        scaled_img = cv2.resize(gray, (500, 500), interpolation=cv2.INTER_NEAREST)
-        cv2.imshow("Done", scaled_img)
-        cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-    for i, line in enumerate(lines_found):
-        points, angle = line
-        e_ends = exp_lines[i]
-        if (points[0] != e_ends[0] or points[-1] != e_ends[-1]) and (points[0] != e_ends[-1] or points[-1] != e_ends[0]):
-             print(f"*** FAIL ***: Test {test_num} failed: Expected line from {e_ends[0]} to {e_ends[-1]}, found from {points[0]} to {points[-1]}")
-             return False
-        # print(f"Exp line {e_ends[0]} - {e_ends[-1]}, Found line {points[0]} - {points[-1]}")
-
-    if len(lines_found) != lines_drawn:
-        print(f"Test {test_num} failed: Expected {lines_drawn} lines, found {len(lines_found)}")
-        return False
-    points, _ = lines_found[0]
-
     return True
-
-
