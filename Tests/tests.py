@@ -1,7 +1,7 @@
 #tests
 import cv2
 import numpy as np
-from FL_lib.find_lines import find_lines
+from find_lines import find_lines
 from Tests.test1 import run_test_1
 from Tests.test2 import run_test_2
 from Tests.test3 import run_test_3

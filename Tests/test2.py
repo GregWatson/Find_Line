@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from FL_lib.find_lines import find_lines
+from find_lines import find_lines
 
 # simple straight lines with several single point interference.
 def run_test_2(test_params):

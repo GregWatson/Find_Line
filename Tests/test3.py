@@ -2,13 +2,12 @@ import sys
 
 import cv2
 import numpy as np
-from FL_lib import find_rotation, rotate_image
-from FL_lib.fl_core import draw_lines_on_color_image, find_piece_center, get_distance_between_2_points, get_palette, rotate_point
-from FL_lib.find_corners import find_corners
-from FL_lib.pre_proc_image import pre_process_image
-from FL_lib.find_rotation import find_rotation
-from FL_lib.rotate_image import rotate_image
-from FL_lib.fl_pad_and_scale import fl_pad_and_scale
+from fl_core import draw_lines_on_color_image, find_piece_center, get_distance_between_2_points, get_palette, rotate_point
+from find_corners import find_corners
+from pre_proc_image import pre_process_image
+from find_rotation import find_rotation
+from rotate_image import rotate_image
+from fl_pad_and_scale import fl_pad_and_scale
 
 # Find lines in a jigsaw piece outline
 def run_test_3(test_params):

@@ -1,7 +1,7 @@
 #tests
 import cv2
 import numpy as np
-from FL_lib.find_line import find_line
+from find_line import find_line
 
 
 # simple straight lines with no interference.

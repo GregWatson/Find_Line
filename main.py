@@ -2,11 +2,22 @@ import cv2
 import numpy as np
 import argparse
 import sys
-from FL_lib.find_lines import find_lines
+import os
+
+# Get the absolute path to the directory containing the module
+module_path = os.path.abspath("../FL_lib")
+
+# Add it to the Python search path
+if module_path not in sys.path:
+    # print(f"Adding path {module_path} to sys.path")
+    sys.path.append(module_path)
+
+from find_lines import find_lines
+from pre_proc_image import pre_process_image
+from polygon_angles import get_polygon_angles
+from find_corners import find_corners
+
 from Tests.tests import run_tests
-from FL_lib.pre_proc_image import pre_process_image
-from FL_lib.polygon_angles import get_polygon_angles
-from FL_lib.find_corners import find_corners
 
 def main():
     parser = argparse.ArgumentParser(description="Piece Project CLI")
