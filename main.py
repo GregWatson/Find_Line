@@ -58,6 +58,7 @@ def main():
         print(f"Vertex {i} {poly_points[i]}: Inner angle = {inner:.2f} degrees, Outer angle = {outer:.2f} degrees")
 
     just_lines = [(line[0][0], line[0][-1])  for line in lines_found]
+    
     corners = find_corners(just_lines, debug=args.debug)
     print(f"Found {len(corners)} corners:")
     for i, (cornerness, point, angle) in enumerate(corners):

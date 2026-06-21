@@ -8,6 +8,7 @@ from FL_lib.find_corners import find_corners
 from FL_lib.pre_proc_image import pre_process_image
 from FL_lib.find_rotation import find_rotation
 from FL_lib.rotate_image import rotate_image
+from FL_lib.fl_pad_and_scale import fl_pad_and_scale
 
 # Find lines in a jigsaw piece outline
 def run_test_3(test_params):
@@ -18,23 +19,20 @@ def run_test_3(test_params):
     #img_names = ["Edges/edges_D.png","Edges/edges_C.png"]
     img_names = ["Edges/edges_B.png", "Edges/edges_C.png", "Edges/edges_D.png"]
 
-    palette, color_names = get_palette(palette_size=6)
+    palette, _ = get_palette(palette_size=6)
 
     for img_name in img_names:
         image = cv2.imread(img_name)
         if image is None:
             print(f"Error: Could not load image from {img_name}. Please check the file path and ensure the image exists.")
             sys.exit(1)
-        min_length = test_params['LEN_THRESH']
 
         cx, cy = find_piece_center(image)
         rot_angle, cx, cy, lines = find_rotation(image, cx, cy, debug=test_params['debug'])
 
-        if test_params['debug']:
-            # draw_lines_on_color_image(image, lines, palette)
-            cv2.imshow(f"Orig Image {img_name}", image)
-            print(f"Found {len(lines)} lines. Rotation angle: {np.degrees(rot_angle):.2f} degrees")
-
+        # crop, pad and scale the image so that it is clean to be rotated.
+        bb_image, bb, (cx,cy) = fl_pad_and_scale(image, lines, (cx,cy))
+        
         rotated_image = rotate_image(image, rot_angle, cx, cy)
         rotated_lines = []
         for line in lines:
@@ -46,7 +44,7 @@ def run_test_3(test_params):
         draw_lines_on_color_image(rotated_image, rotated_lines, palette, dx=3)
 
         # get corners
-        corners = find_corners(rotated_lines, corner_thresh=50, end_to_end_dist_thresh=20, debug=test_params['debug'])
+        corners = find_corners(rotated_lines, end_to_end_dist_thresh=20, debug=test_params['debug'])
 
         if len(corners) < 4:
             print(f"Test {test_num} failed: Expected 4 corners, found {len(corners)}")
@@ -60,9 +58,9 @@ def run_test_3(test_params):
             cv2.imshow(f"Rotated Image {img_name}", rotated_image)
             cv2.waitKey(0)
 
-        all_expected_corners = { "Edges/edges_B.png":[(380, 121), (81, 352), (145, 150), (373, 353)],
-                                 "Edges/edges_C.png":[(308, 150), (334, 356), (140, 339), (145, 191)],
-                                 "Edges/edges_D.png":[(348, 388), (391, 157), (165, 156), (80, 361)]
+        all_expected_corners = { "Edges/edges_B.png":[(431, 351), (140, 350), (439, 119), (204, 148)],
+                                 "Edges/edges_C.png":[(293, 150), (151, 356), (146, 162), (353, 307)],
+                                 "Edges/edges_D.png":[(398, 169), (173, 168), (121, 380), (359, 398)]
                               }
         expected_corners = all_expected_corners[img_name]
         

@@ -1,4 +1,6 @@
 # core routines used for line finding
+from email.mime import image
+
 import numpy as np
 import math
 import cv2
@@ -52,6 +54,18 @@ def get_angle_diff(angle1, angle2):
     if diff > np.pi:
         diff = abs(2*np.pi - diff)
     return diff
+
+# Get the bounding box from a list of lines. The bounding box is defined by the top-left and bottom-right corners.
+def get_bounding_box_from_lines(lines):
+    if not lines:
+        return None, None
+
+    min_x = min(min(line[0][0], line[1][0]) for line in lines)
+    max_x = max(max(line[0][0], line[1][0]) for line in lines)
+    min_y = min(min(line[0][1], line[1][1]) for line in lines)
+    max_y = max(max(line[0][1], line[1][1]) for line in lines)
+
+    return (min_x, min_y), (max_x, max_y)
 
 def find_piece_center(img):
     # Find the coordinates of all white pixels
@@ -116,3 +130,12 @@ def draw_lines_on_color_image(image, lines, palette, dx=3, thickness=1):
         (x1, y1), (x2, y2) = line
         cv2.line(image, (int(x1+dx), int(y1)), (int(x2+dx), int(y2)), palette[color_index % len(palette)], thickness=thickness)
         color_index = (color_index + 1) % len(palette)
+
+def show_image(img, str="Image", max=1000, wait_for_key=True):
+    x_scale_factor = 1000.0 / img.shape[1]
+    y_scale_factor = 1000.0 / img.shape[0]
+    scale_factor = min(x_scale_factor, y_scale_factor, 1.0)
+    resized_image = cv2.resize(img, (0, 0), fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
+    cv2.imshow(str, resized_image)
+    if wait_for_key:
+        cv2.waitKey(0)
